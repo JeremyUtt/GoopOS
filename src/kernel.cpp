@@ -45,6 +45,17 @@ void experiments() {
     }
 }
 
+INTERRUPT void handleError(interrupt_frame*) {
+    printf("interrupt called");
+    uint32_t fault_address;
+    __asm__ __volatile__("movl 4(%%esp), %0" : "=r"(fault_address));
+
+    fprintf(Serial, "Error at address 0x%x", static_cast<uint16_t>(fault_address));
+    
+    __asm__ __volatile__("addl $4, 4(%%ebp)" : : : "memory");
+}
+
+extern "C" void divide_error_handler();
 extern "C" void main() {
     setUiMode(TEXT);
     TuiTextRenderer temp;
@@ -94,6 +105,7 @@ void initKernel(Renderer& renderer) {
     printf("Initializing Serial Interface\n");
     initSerial();
 
+    loadIdtEntry(0, (uint32_t)handleError, 0x08, 0x8e);
     printf("Loading IDT Entry for Timer Handler\n");
     loadIdtEntry(0x20, (uint32_t)asmTimerHandler, 0x08, 0x8e);
 
@@ -150,4 +162,11 @@ char* checkKernelMemory(uint32_t start, uint32_t len, string toFind) {
 void startTUI() {
     Process cmd("cmd", (uint32_t)TUI::main, TEXT);
     cmd.start();
+}
+
+extern "C" void handle_divide_error_c(uint32_t fault_address) {
+    // printf("Divide by zero error at %d\n", fault_address);
+    serialWriteStr(intToStr(fault_address, 16));
+    // Handle the error (terminate, log, etc.)
+    // ...
 }

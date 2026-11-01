@@ -1,6 +1,6 @@
 #include <utils.hpp>
 char strBuf[330];
-string intToStr(int value, int base) {
+string intToStr(int32_t value, int base) {
     char* rc;
     char* ptr;
     char* low;
@@ -35,6 +35,43 @@ string intToStr(int value, int base) {
 
     return string(rc);
 }
+
+bool intToStrBuffer(char* buffer, int value, int base){
+    char* rc;
+    char* ptr;
+    char* low;
+    // Check for supported base.
+    if (base < 2 || base > 36) {
+        *buffer = '\0';
+        return true;
+    }
+    rc = ptr = buffer;
+    // Set '-' for negative decimals.
+    if (value < 0 && base == 10) {
+        *ptr++ = '-';
+    }
+    // Remember where the numbers start.
+    low = ptr;
+    // The actual conversion.
+    do {
+        // Modulo is negative for negative value. This trick makes abs()
+        // unnecessary.
+        *ptr++ = "zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnop"
+                 "qrstuvwxyz"[35 + value % base];
+        value /= base;
+    } while (value);
+    // Terminating the string.
+    *ptr-- = '\0';
+    // Invert the numbers.
+    while (low < ptr) {
+        char tmp = *low;
+        *low++ = *ptr;
+        *ptr-- = tmp;
+    }
+
+    return false;
+}
+
 
 uint32_t strToInt(string value) {
     uint32_t result = 0;
